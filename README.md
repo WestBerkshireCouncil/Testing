@@ -1,5 +1,5 @@
 # Testing
-My test repository
+My public test repository
 
 /***************************************
 /
