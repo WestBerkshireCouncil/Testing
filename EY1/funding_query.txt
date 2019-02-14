@@ -1,0 +1,94 @@
+  /*
+  ***********************************************************************************
+  EYSGR082 - Provider Payment Summary
+
+  Version 03 - 06Feb19 (HG)    Modified query to include DAF payments due
+
+  ***********************************************************************************
+  */
+
+
+WITH funding_payment AS
+(
+  SELECT
+    pp.la_service_provider_detail_id, 
+    pp.pay_by_dt,
+    pp.amount
+
+  FROM
+    onelive.prov_payments pp on d.la_service_provider_detail_id=pp.la_service_provider_detail_id
+    inner join
+    onelive.ey_term t on pp.term_id=t.term_id
+
+  WHERE
+    (pp.amount3 is not null or pp.amount4 is not null) and
+    t.fin_yr={?Financial Year} and
+    t.term_desc='{?Term}' and
+    pp.payment_type=
+    case
+      when '{?Payment Type}'='Estimate Payment' then 'INT'
+      when '{?Payment Type}'='Actual Payment' then 'ACT'
+      when '{?Payment Type}'='Adjustment Payment' then 'ADJ'
+    end
+)
+
+DAF_payment AS
+(
+  /* Find any DAF payments due on the same date */
+
+  SELECT
+    pp.la_service_provider_detail_id, 
+    pp.pay_by_dt,
+    pp.amount
+
+  FROM 
+    onelive.prov_payments pp
+
+  WHERE 
+    pp.payment_type = 'DAF' AND
+    pp.pay_by_dt = (SELECT MAX(pay_by_dt) FROM funding_payment
+),
+
+
+SELECT
+  pr.prov_name,
+  pr.creditor_ref,
+  pp.amount + decode(DAF.amount, NULL, 0, DAF.amount)  as amount,
+  pp.pay_by_dt,
+  'E085W' as account_code,
+  90036 as cost_centre,
+  substr(t.term_desc,0,length(t.term_desc)-4) || 
+  case
+    when pp.payment_type='INT' then 'Interim Payment'
+    when pp.payment_type='ACT' then 'Actual Payment'
+    when pp.payment_type='ADJ' then 'Adjustment Payment'
+  end || ' ' ||t.fin_yr as code
+
+FROM
+  onelive.provider pr
+  inner join
+  onelive.la_service_provider sp on provider_id=early_years_provider_id
+  inner join
+  onelive.la_service_provider_service ps on sp.la_service_provider_id=ps.la_service_provider_id
+  inner join
+  onelive.la_service_provider_detail d on ps.la_service_provider_service_id=d.la_service_provider_service_id
+  inner join
+  funding_payment fp on (d.la_service_provider_detail_id = fp.la_service_provider_detail_id)
+  inner join
+  onelive.ey_term t on pp.term_id=t.term_id
+  left outer join
+  DAF_payment DAF on (d.la_service_provider_detail_id = DAF.la_service_provider_detail_id)
+
+WHERE
+  (pp.amount3 is not null or pp.amount4 is not null or DAF.amount is not NULL) and
+  t.fin_yr={?Financial Year} and
+  t.term_desc='{?Term}' and
+  pp.payment_type=
+  case
+    when '{?Payment Type}'='Estimate Payment' then 'INT'
+    when '{?Payment Type}'='Actual Payment' then 'ACT'
+    when '{?Payment Type}'='Adjustment Payment' then 'ADJ'
+  end
+
+ORDER BY
+  pr.prov_name
