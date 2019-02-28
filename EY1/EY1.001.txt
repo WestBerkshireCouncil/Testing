@@ -2,4 +2,4 @@
 
 First test file contains a number of changes
 
-Are we seeing the historical changes?
+Are we seeing more historical changes?
