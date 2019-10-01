@@ -1,0 +1,139 @@
+/*
+
+SELECT 
+*
+--tgh_id,     767
+--tg_id,
+--tg_year,
+--tg_desc,
+
+FROM onelive.tg_info
+WHERE tg_year = 2017
+
+*/
+
+
+/*
+
+SELECT *
+--tgh_id            767
+--stud_id
+--f_base_id
+--a_base_id
+--alloc_date
+FROM onelive.transfers
+WHERE stud_id = 144979
+
+*/
+
+
+/*
+
+SELECT *
+--base_id            138 and 140
+--type_id
+FROM onelive.bases
+WHERE base_id = 138
+
+
+*/
+
+
+/*
+
+SELECT *
+--entity_id        144979
+--address_id       36249 and 541930
+--start_date
+--end_date
+FROM onelive.addr_link
+WHERE entity_id = 176520
+
+*/
+
+
+/*
+
+SELECT *
+--address_id       36249 and 541930 / 55463, 42056, 519261
+--detail_id       101317 and 99403
+--house_no
+--house_name
+--apartment
+--easting
+--northing
+FROM onelive.addr_hd ah
+  inner join
+  onelive.addr_det ad on ah.detail_id = ad.detail_id
+WHERE address_id = 42056
+
+*/
+
+
+/*
+
+SELECT *
+--detail_id       101317 and 99403
+--address1
+--address2
+--address3
+--post_code
+--town
+FROM onelive.addr_det
+WHERE detail_id = 101317
+
+*/
+
+
+
+
+SELECT
+  s.stud_id,
+  s.surname,
+  s.forename,
+  s.dob,
+  ah.house_no,
+  ah.house_name,
+  ah.apartment,
+  ad.address1,
+  ad.address2,
+  ad.address3,
+  ad.town,
+  ad.post_code,
+  ah.easting,
+  ah.northing,
+  al.address_id,
+  bf.base_name,
+  bf.type_id,
+  ba.base_name,
+  ba.type_id,
+  tgi.tg_year,
+  tgi.tg_desc,
+  t.alloc_date
+
+FROM 
+  onelive.tg_info tgi
+  inner join
+  onelive.transfers t on tgi.tgh_id = t.tgh_id
+  left outer join
+  onelive.bases bf on t.f_base_id = bf.base_id
+  left outer join
+  onelive.bases ba on t.a_base_id = ba.base_id
+  inner join
+  onelive.addr_link al on t.stud_id = al.entity_id
+  inner join
+  onelive.addr_hd ah on al.address_id = ah.address_id
+  inner join
+  onelive.addr_det ad on ah.detail_id = ad.detail_id
+  inner join
+  onelive.student s on t.stud_id = s.stud_id
+  
+
+
+
+WHERE 
+  tgi.tg_year = 2017
+
+ORDER BY
+  s.surname, s.forename
+
